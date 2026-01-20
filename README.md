@@ -8,20 +8,47 @@
 - 選手一覧の取得（球団別）
 - 選手検索（名前、ポジション、背番号など）
 - データキャッシング機能
+- 2つのトランスポートモード対応（stdio / HTTP）
 
 ## インストール
+
+### ローカル開発の場合
 
 ```bash
 npm install
 npm run build
 ```
 
+### npxで直接使用する場合
+
+パッケージを公開後は、インストール不要でnpxから直接実行できます：
+
+```bash
+# stdioモード
+npx npb-mcp-server
+
+# HTTPモード
+MCP_TRANSPORT=http npx npb-mcp-server
+```
+
+ローカルでnpxテストする場合：
+
+```bash
+npm link
+npx npb-mcp-server
+```
+
 ## 使い方
 
-### Claude Desktopで使用する場合
+このサーバーは2つのトランスポートモードで動作します：
+
+### モード1: stdio（デフォルト）
+
+Claude Desktopなどのstdioベースのクライアントで使用する場合。
 
 Claude Desktopの設定ファイル `claude_desktop_config.json` に以下を追加：
 
+**ローカルパスを指定する場合:**
 ```json
 {
   "mcpServers": {
@@ -32,6 +59,73 @@ Claude Desktopの設定ファイル `claude_desktop_config.json` に以下を追
   }
 }
 ```
+
+**npxを使用する場合（パッケージ公開後）:**
+```json
+{
+  "mcpServers": {
+    "npb": {
+      "command": "npx",
+      "args": ["npb-mcp-server"]
+    }
+  }
+}
+```
+
+### モード2: HTTP（Streaming）
+
+Honoを使用したHTTP Streaming Transportモード。より高速な通信が可能です。
+
+**起動方法:**
+
+```bash
+# HTTPモードで起動（デフォルトポート: 3000）
+MCP_TRANSPORT=http node dist/index.js
+
+# npxを使用
+MCP_TRANSPORT=http npx npb-mcp-server
+
+# カスタムポートで起動
+MCP_TRANSPORT=http PORT=8080 node dist/index.js
+```
+
+**Claude Desktopで使用する場合:**
+
+**ローカルパスを指定:**
+```json
+{
+  "mcpServers": {
+    "npb": {
+      "command": "node",
+      "args": ["/path/to/npb-mcp-server/dist/index.js"],
+      "env": {
+        "MCP_TRANSPORT": "http",
+        "PORT": "3000"
+      }
+    }
+  }
+}
+```
+
+**npxを使用（パッケージ公開後）:**
+```json
+{
+  "mcpServers": {
+    "npb": {
+      "command": "npx",
+      "args": ["npb-mcp-server"],
+      "env": {
+        "MCP_TRANSPORT": "http",
+        "PORT": "3000"
+      }
+    }
+  }
+}
+```
+
+**エンドポイント:**
+- `GET /health` - ヘルスチェック
+- `POST /mcp` - MCPメッセージング（SSE）
 
 ### 利用可能なツール
 
