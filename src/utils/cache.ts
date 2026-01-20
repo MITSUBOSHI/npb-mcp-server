@@ -11,7 +11,7 @@ interface CacheEntry<T> {
  * シンプルなインメモリキャッシュ
  */
 export class Cache {
-  private store: Map<string, CacheEntry<any>>;
+  private store: Map<string, CacheEntry<unknown>>;
   private defaultTTL: number;
 
   /**

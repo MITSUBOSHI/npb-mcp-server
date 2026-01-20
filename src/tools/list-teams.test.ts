@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { listTeams } from './list-teams.js';
+import type { Team } from '../types/npb.js';
 
 describe('listTeams', () => {
   it('リーグ指定なしで全12球団を返す', async () => {
@@ -16,10 +17,10 @@ describe('listTeams', () => {
   it('セ・リーグを指定すると6球団を返す', async () => {
     const result = await listTeams({ league: 'central' });
 
-    const teams = JSON.parse(result.content[0].text);
+    const teams = JSON.parse(result.content[0].text) as Team[];
     expect(teams).toHaveLength(6);
 
-    teams.forEach((team: any) => {
+    teams.forEach((team) => {
       expect(team.league).toBe('central');
     });
   });
@@ -27,10 +28,10 @@ describe('listTeams', () => {
   it('パ・リーグを指定すると6球団を返す', async () => {
     const result = await listTeams({ league: 'pacific' });
 
-    const teams = JSON.parse(result.content[0].text);
+    const teams = JSON.parse(result.content[0].text) as Team[];
     expect(teams).toHaveLength(6);
 
-    teams.forEach((team: any) => {
+    teams.forEach((team) => {
       expect(team.league).toBe('pacific');
     });
   });
@@ -38,9 +39,9 @@ describe('listTeams', () => {
   it('各球団に必要なフィールドが含まれる', async () => {
     const result = await listTeams({});
 
-    const teams = JSON.parse(result.content[0].text);
+    const teams = JSON.parse(result.content[0].text) as Team[];
 
-    teams.forEach((team: any) => {
+    teams.forEach((team) => {
       expect(team).toHaveProperty('id');
       expect(team).toHaveProperty('name');
       expect(team).toHaveProperty('fullName');
