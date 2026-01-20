@@ -169,6 +169,9 @@ NPB全12球団の一覧を取得します。
 
 **パラメータ:**
 - `name` (optional): 選手名（部分一致）
+  - スペースの有無に関わらず検索可能（例: 「牧秀悟」「牧 秀悟」「牧　秀悟」）
+  - ひらがなでの検索も可能（例: 「まき」「まき しゅうご」）
+  - カタカナでの検索も可能（例: 「マキ」）
 - `team_id` (optional): 球団ID
 - `position` (optional): ポジション（`pitcher`, `catcher`, `infielder`, `outfielder`）
 - `number` (optional): 背番号
@@ -178,6 +181,12 @@ NPB全12球団の一覧を取得します。
 {
   "name": "大谷",
   "position": "pitcher"
+}
+```
+
+```json
+{
+  "name": "まき しゅうご"
 }
 ```
 

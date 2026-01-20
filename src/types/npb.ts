@@ -35,6 +35,7 @@ export interface Team {
 export interface Player {
   number: string; // 背番号
   name: string; // 選手名
+  nameKana?: string; // 選手名（ふりがな、例: "あずま・かつき"）
   birthDate: string; // 生年月日
   height: number; // 身長（cm）
   weight: number; // 体重（kg）

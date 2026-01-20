@@ -32,6 +32,11 @@ function scrapePlayerProfile($: cheerio.CheerioAPI, playerId: string): PlayerPro
   profileItems.each((_, elem) => {
     const text = $(elem).text().trim();
 
+    // ふりがな（ひらがなと中点のパターン）
+    if (text.match(/^[ぁ-ん・]+$/)) {
+      profile.nameKana = text;
+    }
+
     // 背番号
     if (text.match(/^\d{1,3}$/)) {
       profile.uniformNumber = text;
