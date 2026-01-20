@@ -1,5 +1,9 @@
 # NPB MCP Server
 
+[![Test](https://github.com/MITSUBOSHI/npb-mcp-server/actions/workflows/test.yml/badge.svg)](https://github.com/MITSUBOSHI/npb-mcp-server/actions/workflows/test.yml)
+[![npm version](https://badge.fury.io/js/@mitsuboshi%2Fnpb-mcp-server.svg)](https://badge.fury.io/js/@mitsuboshi%2Fnpb-mcp-server)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+
 日本プロ野球（NPB）の選手情報を提供するModel Context Protocol (MCP) サーバーです。
 
 ## 機能
@@ -202,6 +206,46 @@ npm run test:coverage
 
 合計26個のテストケースが含まれています。
 
+### コード品質
+
+このプロジェクトはESLintとPrettierでコード品質を管理しています。
+
+**推奨コマンド:**
+
+```bash
+# すべての自動修正を一括実行（Prettier → ESLint）
+npm run fix
+
+# すべてのチェックを並列実行（Lint + Format + Test）
+npm run check
+```
+
+**個別コマンド:**
+
+```bash
+# ESLintでコードチェック
+npm run lint
+
+# ESLintで自動修正
+npm run lint:fix
+
+# Prettierでフォーマットチェック
+npm run format:check
+
+# Prettierで自動フォーマット
+npm run format
+```
+
+**設定ファイル:**
+- `.prettierrc` - Prettier設定
+- `eslint.config.js` - ESLint 9.x フラット設定
+
+**コミット前の推奨フロー:**
+```bash
+npm run fix    # コードを自動修正
+npm run check  # すべてのチェックを実行
+```
+
 ### ビルド
 
 ```bash
@@ -211,6 +255,46 @@ npm run build
 # ウォッチモードでビルド
 npm run dev
 ```
+
+## CI/CD
+
+このプロジェクトはGitHub Actionsを使用して自動テストとデプロイを行っています。
+
+### 自動テスト
+
+**トリガー:**
+- `main`、`develop`ブランチへのpush
+- すべてのPull Request
+
+**テスト内容:**
+- Node.js 18.x, 20.x, 22.x でのテスト実行
+- ビルドの確認
+- テストカバレッジの生成
+
+### 自動公開
+
+**トリガー:**
+- GitHubでリリースを作成
+
+**リリース手順:**
+
+通常のコミットではバージョン変更は不要です。リリース時のみ以下を実行：
+
+```bash
+# パッチバージョン更新（バグ修正: 0.1.0 → 0.1.1）
+npm run release:patch
+
+# マイナーバージョン更新（新機能: 0.1.0 → 0.2.0）
+npm run release:minor
+
+# メジャーバージョン更新（破壊的変更: 0.1.0 → 1.0.0）
+npm run release:major
+```
+
+その後、GitHubでリリースを作成すると自動公開されます。
+
+**必要な設定:**
+- GitHub Secretsに`NPM_TOKEN`を設定（Automationトークン推奨）
 
 ## ライセンス
 

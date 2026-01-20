@@ -30,10 +30,20 @@
     "mcp",
     "npb",
     "baseball",
-    "japan"
+    "japan",
+    "model-context-protocol",
+    "scraping"
   ],
-  "author": "",
+  "author": "MITSUBOSHI <yuya.mitsuboshi@gmail.com> (https://github.com/MITSUBOSHI)",
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/MITSUBOSHI/npb-mcp-server.git"
+  },
+  "homepage": "https://github.com/MITSUBOSHI/npb-mcp-server#readme",
+  "bugs": {
+    "url": "https://github.com/MITSUBOSHI/npb-mcp-server/issues"
+  },
   "files": [
     "dist",
     "README.md"
