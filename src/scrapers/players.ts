@@ -6,8 +6,9 @@ import { globalCache } from '../utils/cache.js';
 
 /**
  * ポジション名からPositionを判定
+ * @internal 現在は未使用だが、将来の拡張のために保持
  */
-function parsePosition(positionText: string): Position {
+function _parsePosition(positionText: string): Position {
   if (positionText.includes('投手')) return 'pitcher';
   if (positionText.includes('捕手')) return 'catcher';
   if (positionText.includes('内野手')) return 'infielder';
@@ -29,7 +30,13 @@ function parseHand(handText: string): Hand {
 /**
  * テーブル行から選手情報をパース
  */
-function parsePlayerRow($: cheerio.CheerioAPI, row: Element, position: Position, category: PlayerCategory, teamId: string): Player | null {
+function parsePlayerRow(
+  $: cheerio.CheerioAPI,
+  row: Element,
+  position: Position,
+  category: PlayerCategory,
+  teamId: string
+): Player | null {
   const cells = $(row).find('td');
 
   if (cells.length < 7) {
@@ -64,7 +71,7 @@ function parsePlayerRow($: cheerio.CheerioAPI, row: Element, position: Position,
       position,
       category,
       note: note || undefined,
-      teamId
+      teamId,
     };
   } catch (error) {
     console.error('Error parsing player row:', error);
@@ -133,7 +140,7 @@ export async function getTeamPlayers(team: Team): Promise<TeamRoster> {
   const roster: TeamRoster = {
     team,
     players,
-    lastUpdated: new Date()
+    lastUpdated: new Date(),
   };
 
   // キャッシュに保存（1時間）

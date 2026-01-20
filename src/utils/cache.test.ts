@@ -22,7 +22,7 @@ describe('Cache', () => {
     expect(cache.get('key1')).toBe('value1');
 
     // 150ms待つ
-    await new Promise(resolve => setTimeout(resolve, 150));
+    await new Promise((resolve) => setTimeout(resolve, 150));
 
     expect(cache.get('key1')).toBeNull();
   });
@@ -64,7 +64,7 @@ describe('Cache', () => {
     expect(cache.size()).toBe(2);
 
     // 150ms待つ
-    await new Promise(resolve => setTimeout(resolve, 150));
+    await new Promise((resolve) => setTimeout(resolve, 150));
 
     cache.cleanup();
 

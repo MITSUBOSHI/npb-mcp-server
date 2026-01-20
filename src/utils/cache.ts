@@ -51,7 +51,7 @@ export class Cache {
     const entry: CacheEntry<T> = {
       data,
       timestamp: Date.now(),
-      ttl: ttl ?? this.defaultTTL
+      ttl: ttl ?? this.defaultTTL,
     };
 
     this.store.set(key, entry);

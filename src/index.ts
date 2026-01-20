@@ -71,7 +71,8 @@ class NPBServer {
             properties: {
               team_id: {
                 type: 'string',
-                description: '球団ID (例: g=ジャイアンツ, t=タイガース, db=ベイスターズ, c=カープ, s=スワローズ, d=ドラゴンズ, h=ホークス, f=ファイターズ, m=マリーンズ, e=イーグルス, bs=バファローズ, l=ライオンズ)',
+                description:
+                  '球団ID (例: g=ジャイアンツ, t=タイガース, db=ベイスターズ, c=カープ, s=スワローズ, d=ドラゴンズ, h=ホークス, f=ファイターズ, m=マリーンズ, e=イーグルス, bs=バファローズ, l=ライオンズ)',
               },
             },
             required: ['team_id'],
@@ -117,10 +118,7 @@ class NPBServer {
 
           case 'get_team_players':
             if (!args || !args.team_id) {
-              throw new McpError(
-                ErrorCode.InvalidParams,
-                'team_id is required'
-              );
+              throw new McpError(ErrorCode.InvalidParams, 'team_id is required');
             }
             return await getTeamPlayersHandler(args as { team_id: string });
 
@@ -128,10 +126,7 @@ class NPBServer {
             return await searchPlayers(args || {});
 
           default:
-            throw new McpError(
-              ErrorCode.MethodNotFound,
-              `Unknown tool: ${name}`
-            );
+            throw new McpError(ErrorCode.MethodNotFound, `Unknown tool: ${name}`);
         }
       } catch (error) {
         if (error instanceof McpError) {
@@ -139,10 +134,7 @@ class NPBServer {
         }
 
         const errorMessage = error instanceof Error ? error.message : String(error);
-        throw new McpError(
-          ErrorCode.InternalError,
-          `Tool execution failed: ${errorMessage}`
-        );
+        throw new McpError(ErrorCode.InternalError, `Tool execution failed: ${errorMessage}`);
       }
     });
   }
@@ -256,27 +248,33 @@ class NPBServer {
             result,
           });
         } else {
-          return c.json({
-            jsonrpc: '2.0',
-            id: request.id,
-            error: {
-              code: ErrorCode.MethodNotFound,
-              message: `Unknown method: ${request.method}`,
+          return c.json(
+            {
+              jsonrpc: '2.0',
+              id: request.id,
+              error: {
+                code: ErrorCode.MethodNotFound,
+                message: `Unknown method: ${request.method}`,
+              },
             },
-          }, 404);
+            404
+          );
         }
       } catch (error) {
         const errorMessage = error instanceof Error ? error.message : String(error);
         const errorCode = error instanceof McpError ? error.code : ErrorCode.InternalError;
 
-        return c.json({
-          jsonrpc: '2.0',
-          id: (await c.req.json()).id,
-          error: {
-            code: errorCode,
-            message: errorMessage,
+        return c.json(
+          {
+            jsonrpc: '2.0',
+            id: (await c.req.json()).id,
+            error: {
+              code: errorCode,
+              message: errorMessage,
+            },
           },
-        }, 500);
+          500
+        );
       }
     });
 

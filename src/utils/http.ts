@@ -5,7 +5,7 @@ import fetch from 'node-fetch';
  */
 const DEFAULT_HEADERS = {
   'User-Agent': 'NPB-MCP-Server/0.1.0',
-  'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+  Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
   'Accept-Language': 'ja,en;q=0.9',
 };
 

@@ -15,9 +15,7 @@ export async function searchPlayers(args: {
   const { name, team_id, position, number } = args;
 
   // 対象の球団を決定
-  const targetTeams = team_id
-    ? TEAMS.filter(t => t.id === team_id)
-    : TEAMS;
+  const targetTeams = team_id ? TEAMS.filter((t) => t.id === team_id) : TEAMS;
 
   // すべての選手を取得
   const rostersMap = await getAllPlayers(targetTeams);
@@ -32,28 +30,30 @@ export async function searchPlayers(args: {
 
   if (name) {
     const searchName = name.toLowerCase();
-    results = results.filter(p =>
-      p.name.toLowerCase().includes(searchName)
-    );
+    results = results.filter((p) => p.name.toLowerCase().includes(searchName));
   }
 
   if (position) {
-    results = results.filter(p => p.position === position);
+    results = results.filter((p) => p.position === position);
   }
 
   if (number) {
-    results = results.filter(p => p.number === number);
+    results = results.filter((p) => p.number === number);
   }
 
   return {
     content: [
       {
         type: 'text',
-        text: JSON.stringify({
-          resultCount: results.length,
-          players: results
-        }, null, 2)
-      }
-    ]
+        text: JSON.stringify(
+          {
+            resultCount: results.length,
+            players: results,
+          },
+          null,
+          2
+        ),
+      },
+    ],
   };
 }

@@ -11,15 +11,15 @@ export async function listTeams(args: { league?: string }) {
 
   // リーグでフィルタリング
   if (league === 'central' || league === 'pacific') {
-    teams = teams.filter(team => team.league === league);
+    teams = teams.filter((team) => team.league === league);
   }
 
   return {
     content: [
       {
         type: 'text',
-        text: JSON.stringify(teams, null, 2)
-      }
-    ]
+        text: JSON.stringify(teams, null, 2),
+      },
+    ],
   };
 }

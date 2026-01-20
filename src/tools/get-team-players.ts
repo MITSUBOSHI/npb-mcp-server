@@ -20,13 +20,17 @@ export async function getTeamPlayersHandler(args: { team_id: string }) {
     content: [
       {
         type: 'text',
-        text: JSON.stringify({
-          team: roster.team,
-          playerCount: roster.players.length,
-          players: roster.players,
-          lastUpdated: roster.lastUpdated
-        }, null, 2)
-      }
-    ]
+        text: JSON.stringify(
+          {
+            team: roster.team,
+            playerCount: roster.players.length,
+            players: roster.players,
+            lastUpdated: roster.lastUpdated,
+          },
+          null,
+          2
+        ),
+      },
+    ],
   };
 }
