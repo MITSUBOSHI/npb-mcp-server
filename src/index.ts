@@ -14,6 +14,7 @@ import { serve } from '@hono/node-server';
 import { listTeams } from './tools/list-teams.js';
 import { getTeamPlayersHandler } from './tools/get-team-players.js';
 import { searchPlayers } from './tools/search-players.js';
+import { getPlayerDetailsHandler } from './tools/get-player-details.js';
 
 /**
  * NPB MCP Server
@@ -104,6 +105,20 @@ class NPBServer {
             },
           },
         },
+        {
+          name: 'get_player_details',
+          description: '選手の詳細情報（プロフィール、年度別成績、通算成績）を取得します。',
+          inputSchema: {
+            type: 'object',
+            properties: {
+              player_id: {
+                type: 'string',
+                description: '8桁の選手ID（例: 51155136）',
+              },
+            },
+            required: ['player_id'],
+          },
+        },
       ],
     }));
 
@@ -124,6 +139,12 @@ class NPBServer {
 
           case 'search_players':
             return await searchPlayers(args || {});
+
+          case 'get_player_details':
+            if (!args || !args.player_id) {
+              throw new McpError(ErrorCode.InvalidParams, 'player_id is required');
+            }
+            return await getPlayerDetailsHandler(args as { player_id: string });
 
           default:
             throw new McpError(ErrorCode.MethodNotFound, `Unknown tool: ${name}`);
@@ -213,6 +234,20 @@ class NPBServer {
                   },
                 },
               },
+              {
+                name: 'get_player_details',
+                description: '選手の詳細情報（プロフィール、年度別成績、通算成績）を取得します。',
+                inputSchema: {
+                  type: 'object',
+                  properties: {
+                    player_id: {
+                      type: 'string',
+                      description: '8桁の選手ID（例: 51155136）',
+                    },
+                  },
+                  required: ['player_id'],
+                },
+              },
             ],
           };
 
@@ -237,6 +272,12 @@ class NPBServer {
               break;
             case 'search_players':
               result = await searchPlayers(args || {});
+              break;
+            case 'get_player_details':
+              if (!args || !args.player_id) {
+                throw new McpError(ErrorCode.InvalidParams, 'player_id is required');
+              }
+              result = await getPlayerDetailsHandler(args as { player_id: string });
               break;
             default:
               throw new McpError(ErrorCode.MethodNotFound, `Unknown tool: ${name}`);

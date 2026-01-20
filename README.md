@@ -11,6 +11,7 @@
 - NPB全12球団の情報取得
 - 選手一覧の取得（球団別）
 - 選手検索（名前、ポジション、背番号など）
+- 選手の詳細情報取得（プロフィール、年度別成績、通算成績）
 - データキャッシング機能
 - 2つのトランスポートモード対応（stdio / HTTP）
 
@@ -177,6 +178,58 @@ NPB全12球団の一覧を取得します。
 {
   "name": "大谷",
   "position": "pitcher"
+}
+```
+
+#### 4. get_player_details
+選手の詳細情報（プロフィール、年度別成績、通算成績）を取得します。
+
+**パラメータ:**
+- `player_id` (required): 8桁の選手ID
+
+**選手IDの取得方法:**
+`get_team_players`や`search_players`で取得した選手情報の`playerId`フィールドを使用してください。
+
+**例:**
+```json
+{
+  "player_id": "51155136"
+}
+```
+
+**レスポンス:**
+```json
+{
+  "profile": {
+    "playerId": "51155136",
+    "name": "東　克樹",
+    "uniformNumber": "11",
+    "team": "横浜DeNAベイスターズ",
+    "position": "投手",
+    "throwingHand": "左",
+    "battingHand": "左",
+    "height": "170cm",
+    "weight": "80kg",
+    "birthDate": "1995年11月29日",
+    "career": "愛工大名電高→立命館大",
+    "draftInfo": "2017年ドラフト1位"
+  },
+  "pitchingStats": [
+    {
+      "year": "2018",
+      "team": "DeNA",
+      "games": 26,
+      "wins": 9,
+      "losses": 6,
+      ...
+    }
+  ],
+  "careerPitching": {
+    "games": 120,
+    "wins": 60,
+    "losses": 30,
+    "era": 2.43
+  }
 }
 ```
 

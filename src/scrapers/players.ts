@@ -60,6 +60,20 @@ function parsePlayerRow(
       return null;
     }
 
+    // 選手IDを抽出（リンクが存在する場合）
+    let playerId: string | undefined;
+    const link = $(cells[1]).find('a');
+    if (link.length > 0) {
+      const href = link.attr('href');
+      if (href) {
+        // /bis/players/12345678.html のようなパターンから選手IDを抽出
+        const match = href.match(/\/bis\/players\/(\d{8})\.html/);
+        if (match) {
+          playerId = match[1];
+        }
+      }
+    }
+
     return {
       number,
       name,
@@ -72,6 +86,7 @@ function parsePlayerRow(
       category,
       note: note || undefined,
       teamId,
+      playerId,
     };
   } catch (error) {
     console.error('Error parsing player row:', error);
