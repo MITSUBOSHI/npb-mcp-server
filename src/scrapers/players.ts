@@ -101,23 +101,73 @@ export function scrapePlayersFromHTML(html: string, teamId: string): Player[] {
   const $ = cheerio.load(html);
   const players: Player[] = [];
 
-  // 前の見出し（H3）からカテゴリー情報を取得（テーブルごとに判定）
-  let globalCategory: PlayerCategory = 'registered';
-
   // テーブルを探す（rosterlisttblクラスのテーブルを優先）
   $('table.rosterlisttbl, table').each((_, table) => {
     const $table = $(table);
 
-    // 前の見出し（H3）からカテゴリー情報を取得
+    // カテゴリー判定: まず前の見出しを探す
+    let category: PlayerCategory = 'registered';
     const previousHeading = $table.prevAll('h2, h3, h4').first().text();
+
     if (previousHeading.includes('育成')) {
-      globalCategory = 'development';
+      category = 'development';
     } else if (previousHeading.includes('支配下')) {
-      globalCategory = 'registered';
+      category = 'registered';
+    } else {
+      // 前の見出しが見つからない場合、親要素内の見出しを探す
+      let parent = $table.parent();
+      let foundHeading = false;
+
+      // 最大5階層まで遡って見出しを探す
+      for (let i = 0; i < 5 && parent.length > 0 && !foundHeading; i++) {
+        // テーブルの前にある見出しを探す
+        const headingsBeforeTable = parent.find('h3').filter((_, h) => {
+          const $h = $(h);
+          const headingText = $h.text().trim();
+          // 見出しがテーブルの前にあるかチェック
+          const headingIndex = $h.index();
+          const tableIndex = $table.index();
+          return (
+            (headingText.includes('育成') || headingText.includes('支配下')) &&
+            headingIndex < tableIndex
+          );
+        });
+
+        if (headingsBeforeTable.length > 0) {
+          const headingText = $(headingsBeforeTable.first()).text().trim();
+          if (headingText.includes('育成')) {
+            category = 'development';
+            foundHeading = true;
+          } else if (headingText.includes('支配下')) {
+            category = 'registered';
+            foundHeading = true;
+          }
+        }
+
+        parent = parent.parent();
+      }
+
+      // 見出しが見つからない場合、背番号のパターンで判定（3桁の背番号は育成選手の可能性が高い）
+      if (!foundHeading) {
+        const firstDataRow = $table
+          .find('tr')
+          .filter((_, row) => {
+            const cells = $(row).find('td');
+            if (cells.length >= 2) {
+              const number = $(cells[0]).text().trim();
+              return /^\d{3}$/.test(number); // 3桁の数字
+            }
+            return false;
+          })
+          .first();
+
+        if (firstDataRow.length > 0) {
+          category = 'development';
+        }
+      }
     }
 
     let currentPosition: Position = 'pitcher';
-    let category = globalCategory;
 
     // テーブル内の各行を処理
     $table.find('tbody tr, tr').each((_, row) => {
