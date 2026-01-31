@@ -42,6 +42,17 @@ function scrapePlayerProfile($: cheerio.CheerioAPI, playerId: string): PlayerPro
       profile.uniformNumber = text;
     }
 
+    // ポジション（完全一致でチェック）
+    if (text === '投手') {
+      profile.position = '投手';
+    } else if (text === '捕手') {
+      profile.position = '捕手';
+    } else if (text === '内野手') {
+      profile.position = '内野手';
+    } else if (text === '外野手') {
+      profile.position = '外野手';
+    }
+
     // 投打
     if (text.includes('投') && text.includes('打')) {
       const match = text.match(/([左右両])投([左右両])打/);
@@ -77,18 +88,6 @@ function scrapePlayerProfile($: cheerio.CheerioAPI, playerId: string): PlayerPro
       profile.draftInfo = text;
     }
   });
-
-  // ポジション
-  const positionText = $('body').text();
-  if (positionText.includes('投手')) {
-    profile.position = '投手';
-  } else if (positionText.includes('捕手')) {
-    profile.position = '捕手';
-  } else if (positionText.includes('内野手')) {
-    profile.position = '内野手';
-  } else if (positionText.includes('外野手')) {
-    profile.position = '外野手';
-  }
 
   // 球団名を取得
   profile.team = $('title').text().split('|')[1]?.trim() || '';

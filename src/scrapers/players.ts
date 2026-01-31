@@ -101,32 +101,76 @@ export function scrapePlayersFromHTML(html: string, teamId: string): Player[] {
   const $ = cheerio.load(html);
   const players: Player[] = [];
 
-  // テーブルを探す（実際の構造に応じて調整が必要）
-  $('table').each((_, table) => {
+  // 前の見出し（H3）からカテゴリー情報を取得（テーブルごとに判定）
+  let globalCategory: PlayerCategory = 'registered';
+
+  // テーブルを探す（rosterlisttblクラスのテーブルを優先）
+  $('table.rosterlisttbl, table').each((_, table) => {
     const $table = $(table);
 
-    // テーブルのキャプションや見出しからポジションとカテゴリーを判定
-    const caption = $table.find('caption').text();
+    // 前の見出し（H3）からカテゴリー情報を取得
     const previousHeading = $table.prevAll('h2, h3, h4').first().text();
-    const contextText = caption + previousHeading;
-
-    let position: Position = 'pitcher';
-    let category: PlayerCategory = 'registered';
-
-    // ポジション判定
-    if (contextText.includes('投手')) position = 'pitcher';
-    else if (contextText.includes('捕手')) position = 'catcher';
-    else if (contextText.includes('内野手')) position = 'infielder';
-    else if (contextText.includes('外野手')) position = 'outfielder';
-
-    // カテゴリー判定
-    if (contextText.includes('育成')) {
-      category = 'development';
+    if (previousHeading.includes('育成')) {
+      globalCategory = 'development';
+    } else if (previousHeading.includes('支配下')) {
+      globalCategory = 'registered';
     }
 
+    let currentPosition: Position = 'pitcher';
+    let category = globalCategory;
+
     // テーブル内の各行を処理
-    $table.find('tbody tr').each((_, row) => {
-      const player = parsePlayerRow($, row, position, category, teamId);
+    $table.find('tbody tr, tr').each((_, row) => {
+      const $row = $(row);
+      const cells = $row.find('td, th');
+
+      // セル数が少ない行（ヘッダー行や区切り行）をスキップ
+      if (cells.length < 7) {
+        // ただし、ポジションヘッダー行の可能性がある場合はチェック
+        const rowText = $row.text();
+        if (rowText.includes('投手')) {
+          currentPosition = 'pitcher';
+          return;
+        } else if (rowText.includes('捕手')) {
+          currentPosition = 'catcher';
+          return;
+        } else if (rowText.includes('内野手')) {
+          currentPosition = 'infielder';
+          return;
+        } else if (rowText.includes('外野手')) {
+          currentPosition = 'outfielder';
+          return;
+        }
+        return;
+      }
+
+      // ポジションヘッダー行のチェック（「No. | 投手」のような行）
+      const firstCellText = $(cells[0]).text().trim();
+      const secondCellText = $(cells[1]).text().trim();
+
+      // ヘッダー行のパターン: 「No.」で始まり、2番目のセルにポジション名がある
+      if (firstCellText === 'No.' || firstCellText.includes('No.')) {
+        if (secondCellText.includes('投手')) {
+          currentPosition = 'pitcher';
+          return;
+        } else if (secondCellText.includes('捕手')) {
+          currentPosition = 'catcher';
+          return;
+        } else if (secondCellText.includes('内野手')) {
+          currentPosition = 'infielder';
+          return;
+        } else if (secondCellText.includes('外野手')) {
+          currentPosition = 'outfielder';
+          return;
+        }
+        // 監督などの行はスキップ
+        if (secondCellText.includes('監督') || secondCellText.includes('コーチ')) {
+          return;
+        }
+      }
+
+      // 選手データ行をパース
+      const player = parsePlayerRow($, row, currentPosition, category, teamId);
       if (player) {
         players.push(player);
       }
