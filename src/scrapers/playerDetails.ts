@@ -86,8 +86,38 @@ function scrapePlayerProfile($: cheerio.CheerioAPI, playerId: string): PlayerPro
     // ドラフト情報
     if (text.includes('ドラフト')) {
       profile.draftInfo = text;
+
+      // ドラフト情報から入団年を抽出（例: "2017年ドラフト1位" → 2017）
+      const yearMatch = text.match(/(\d{4})年ドラフト/);
+      if (yearMatch) {
+        const year = parseInt(yearMatch[1], 10);
+        if (!isNaN(year) && year >= 1965 && year <= 2100) {
+          // 妥当な年の範囲をチェック
+          profile.joinedYear = year;
+        }
+      }
     }
   });
+
+  // 入団年がまだ取得できていない場合、成績テーブルの最初の年度から推測
+  if (!profile.joinedYear) {
+    // 投手成績または打撃成績の最初の年度を取得
+    const firstYearRow = $('table tbody tr')
+      .filter((_, row) => {
+        const firstCell = $(row).find('td').first().text().trim();
+        return /^\d{4}$/.test(firstCell); // 4桁の数字（年度）
+      })
+      .first();
+
+    if (firstYearRow.length > 0) {
+      const firstYearText = firstYearRow.find('td').first().text().trim();
+      const firstYear = parseInt(firstYearText, 10);
+      if (!isNaN(firstYear) && firstYear >= 1965 && firstYear <= 2100) {
+        // 最初の年度の前年が入団年（ドラフト年）の可能性が高い
+        // ただし、確実ではないので、ドラフト情報がない場合はnullのまま
+      }
+    }
+  }
 
   // 球団名を取得
   profile.team = $('title').text().split('|')[1]?.trim() || '';

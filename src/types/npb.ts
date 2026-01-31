@@ -46,6 +46,7 @@ export interface Player {
   note?: string; // 備考
   teamId: string; // 所属球団ID
   playerId?: string; // 選手ID（8桁の数字、例: "51155136"）
+  joinedYear?: number; // 入団年（ドラフト年、例: 2017）
 }
 
 /**
@@ -138,6 +139,7 @@ export interface PlayerProfile {
   bloodType?: string; // 血液型
   career?: string; // 経歴
   draftInfo?: string; // ドラフト情報
+  joinedYear?: number; // 入団年（ドラフト年、例: 2017）
 }
 
 /**

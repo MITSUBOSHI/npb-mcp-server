@@ -390,6 +390,11 @@ describe('scrapePlayerDetailsFromHTML', () => {
       const result = scrapePlayerDetailsFromHTML(mockPitcherHTML, '51155136');
       expect(result.profile.draftInfo).toContain('2017年ドラフト1位');
     });
+
+    it('入団年をドラフト情報から正しく抽出する', () => {
+      const result = scrapePlayerDetailsFromHTML(mockPitcherHTML, '51155136');
+      expect(result.profile.joinedYear).toBe(2017);
+    });
   });
 
   describe('投手成績の抽出', () => {
