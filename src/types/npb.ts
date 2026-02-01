@@ -87,6 +87,12 @@ export interface PitchingStats {
   runsAllowed: number; // 失点
   earnedRuns: number; // 自責点
   era: number; // 防御率
+  // 詳細統計情報
+  whip?: number; // WHIP（Walks + Hits per Inning Pitched）
+  battingAverageAgainst?: number; // 被打率
+  homeRunsPer9?: number; // 被本塁打率（9イニングあたり）
+  walksPer9?: number; // 与四球率（9イニングあたり）
+  strikeoutWalkRatio?: number; // 奪三振/与四球比
 }
 
 /**
@@ -118,6 +124,13 @@ export interface BattingStats {
   onBasePercentage: number; // 出塁率
   sluggingPercentage: number; // 長打率
   ops: number; // OPS
+  // 詳細統計情報
+  iso?: number; // ISO（Isolated Power = 長打率 - 打率）
+  babip?: number; // BABIP（Batting Average on Balls In Play）
+  strikeoutRate?: number; // 三振率
+  walkRate?: number; // 四球率
+  homeRunRate?: number; // 本塁打率
+  stolenBasePercentage?: number; // 盗塁成功率
 }
 
 /**
@@ -135,11 +148,25 @@ export interface PlayerProfile {
   height: string; // 身長
   weight: string; // 体重
   birthDate: string; // 生年月日
-  birthPlace?: string; // 出身地
-  bloodType?: string; // 血液型
   career?: string; // 経歴
   draftInfo?: string; // ドラフト情報
   joinedYear?: number; // 入団年（ドラフト年、例: 2017）
+  // 注意: 以下の情報はNPB公式サイトの選手詳細ページに掲載されていないため取得できません
+  // birthPlace?: string; // 出身地
+  // bloodType?: string; // 血液型
+  // awards?: Award[]; // 表彰歴
+}
+
+/**
+ * 移籍情報
+ */
+export interface Transfer {
+  year: string; // 年度
+  fromTeam?: string; // 移籍元球団
+  toTeam: string; // 移籍先球団（'NPB1軍稼働無し'の場合はNPB1軍での成績データが存在しない年度）
+  type?: 'draft' | 'trade' | 'free_agent' | 'waiver' | 'other' | 'npb_inactive'; // 移籍種別
+  // 注意: 成績データが存在しない年度は、怪我・メジャーリーグ移籍・その他の理由により
+  // NPB1軍で稼働していない可能性があります。具体的な理由は成績テーブルからは判断できません。
 }
 
 /**
@@ -151,4 +178,9 @@ export interface PlayerDetails {
   battingStats?: BattingStats[]; // 打撃成績（年度別）
   careerPitching?: Partial<PitchingStats>; // 通算投手成績
   careerBatting?: Partial<BattingStats>; // 通算打撃成績
+  transfers?: Transfer[]; // 移籍履歴
+  // 注意: ファーム成績はNPB公式サイトの選手詳細ページに掲載されていないため、
+  // 現時点では取得できません。将来的に別のデータソースから取得する可能性があります。
+  // farmPitchingStats?: FarmPitchingStats[]; // ファーム投手成績（年度別）
+  // farmBattingStats?: FarmBattingStats[]; // ファーム打撃成績（年度別）
 }

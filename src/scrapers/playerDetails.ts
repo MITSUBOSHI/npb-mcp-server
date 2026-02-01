@@ -1,5 +1,15 @@
 import * as cheerio from 'cheerio';
-import type { PlayerDetails, PlayerProfile, PitchingStats, BattingStats } from '../types/npb.js';
+import type {
+  PlayerDetails,
+  PlayerProfile,
+  PitchingStats,
+  BattingStats,
+  Transfer,
+  // 注意: ファーム成績はNPB公式サイトの選手詳細ページに掲載されていないため、
+  // 現時点では取得できません。
+  // FarmPitchingStats,
+  // FarmBattingStats,
+} from '../types/npb.js';
 import { fetchHTML } from '../utils/http.js';
 import { globalCache } from '../utils/cache.js';
 
@@ -125,6 +135,10 @@ function scrapePlayerProfile($: cheerio.CheerioAPI, playerId: string): PlayerPro
   return profile as PlayerProfile;
 }
 
+// 注意: 表彰歴の抽出機能は削除されました。
+// NPB公式サイトの選手詳細ページには表彰歴セクションが存在しないため、
+// 現時点では取得できません。
+
 /**
  * テーブルから投手成績を抽出
  */
@@ -146,9 +160,15 @@ function scrapePitchingStats($: cheerio.CheerioAPI): {
       headerText.includes('勝利') ||
       headerText.includes('登板')
     ) {
-      const headers: string[] = [];
-      $table.find('thead th, tr:first-child th').each((_, th) => {
-        headers.push($(th).text().trim());
+      // ヘッダー行から列の位置を特定
+      const headerRow = $table.find('thead tr, tr:first-child').first();
+      const headerCells = headerRow.find('th, td');
+      const columnMap: Record<string, number> = {};
+      headerCells.each((index, cell) => {
+        const headerText = $(cell).text().trim();
+        if (headerText) {
+          columnMap[headerText] = index;
+        }
       });
 
       $table.find('tbody tr, tr').each((_, row) => {
@@ -160,11 +180,11 @@ function scrapePitchingStats($: cheerio.CheerioAPI): {
         // 通算成績の行
         if (yearText.includes('通') || yearText.includes('通算')) {
           career = {
-            games: parseNumber($(cells[2]).text()),
-            wins: parseNumber($(cells[3]).text()),
-            losses: parseNumber($(cells[4]).text()),
-            saves: parseNumber($(cells[5]).text()),
-            holds: parseNumber($(cells[6]).text()),
+            games: parseNumber($(cells[columnMap['登板'] || 2]).text()),
+            wins: parseNumber($(cells[columnMap['勝利'] || 3]).text()),
+            losses: parseNumber($(cells[columnMap['敗北'] || 4]).text()),
+            saves: parseNumber($(cells[columnMap['セーブ'] || 5]).text()),
+            holds: parseNumber($(cells[columnMap['H'] || 6]).text()),
             era: parseNumber($(cells[cells.length - 1]).text()),
           };
           return;
@@ -172,33 +192,93 @@ function scrapePitchingStats($: cheerio.CheerioAPI): {
 
         // 年度別成績
         if (yearText.match(/^\d{4}$/)) {
+          // セルインデックスを動的に取得（ヘッダー行から列位置を特定）
+          const getCellValue = (columnName: string, defaultIndex: number): number => {
+            const index = columnMap[columnName];
+            if (index !== undefined && index < cells.length) {
+              return parseNumber($(cells[index]).text());
+            }
+            return parseNumber($(cells[defaultIndex] || cells[0]).text());
+          };
+
+          const getCellValueWithDecimal = (columnName: string, defaultIndex: number): number => {
+            const index = columnMap[columnName];
+            if (index !== undefined && index < cells.length) {
+              let text = $(cells[index]).text().trim();
+              // 次のセルが小数部分（.1, .2など）の場合は結合
+              if (index + 1 < cells.length) {
+                const nextCellText = $(cells[index + 1])
+                  .text()
+                  .trim();
+                if (nextCellText.match(/^\.\d+$/)) {
+                  text += nextCellText;
+                }
+              }
+              return parseNumber(text);
+            }
+            // フォールバック: デフォルトインデックスから取得
+            if (defaultIndex < cells.length) {
+              let text = $(cells[defaultIndex]).text().trim();
+              if (defaultIndex + 1 < cells.length) {
+                const nextCellText = $(cells[defaultIndex + 1])
+                  .text()
+                  .trim();
+                if (nextCellText.match(/^\.\d+$/)) {
+                  text += nextCellText;
+                }
+              }
+              return parseNumber(text);
+            }
+            return 0;
+          };
+
           const stat: PitchingStats = {
             year: yearText,
-            team: $(cells[1]).text().trim(),
-            games: parseNumber($(cells[2]).text()),
-            wins: parseNumber($(cells[3]).text()),
-            losses: parseNumber($(cells[4]).text()),
-            saves: parseNumber($(cells[5]).text()),
-            holds: parseNumber($(cells[6]).text()),
-            hp: parseNumber($(cells[7]).text()),
-            completeGames: parseNumber($(cells[8]).text()),
-            shutouts: parseNumber($(cells[9]).text()),
-            noWalks: parseNumber($(cells[10]).text()),
-            winningPercentage: parseNumber($(cells[11]).text()),
-            batters: parseNumber($(cells[12]).text()),
-            innings: parseNumber($(cells[13]).text()),
-            hits: parseNumber($(cells[14]).text()),
-            homeRuns: parseNumber($(cells[15]).text()),
-            strikeouts: parseNumber($(cells[16]).text()),
-            strikeoutsPer9: parseNumber($(cells[17]).text()),
-            walks: parseNumber($(cells[18]).text()),
-            hitByPitch: parseNumber($(cells[19]).text()),
-            wildPitches: parseNumber($(cells[20]).text()),
-            balks: parseNumber($(cells[21]).text()),
-            runsAllowed: parseNumber($(cells[22]).text()),
-            earnedRuns: parseNumber($(cells[23]).text()),
-            era: parseNumber($(cells[24]).text()),
+            team: $(cells[columnMap['所属球団'] ?? 1])
+              .text()
+              .trim(),
+            games: getCellValue('登板', 2),
+            wins: getCellValue('勝利', 3),
+            losses: getCellValue('敗北', 4),
+            saves: getCellValue('セーブ', 5),
+            holds: getCellValue('H', 6),
+            hp: getCellValue('HP', 7),
+            completeGames: getCellValue('完投', 8),
+            shutouts: getCellValue('完封勝', 9),
+            noWalks: getCellValue('無四球', 10),
+            winningPercentage: getCellValue('勝率', 11),
+            batters: getCellValue('打者', 12),
+            innings: getCellValueWithDecimal('投球回', 13),
+            hits: getCellValueWithDecimal('安打', 14),
+            homeRuns: getCellValue('本塁打', 15),
+            strikeouts: getCellValue('三振', 18),
+            strikeoutsPer9: getCellValue('奪三振率', 17),
+            walks: getCellValue('四球', 16),
+            hitByPitch: getCellValue('死球', 17),
+            wildPitches: getCellValue('暴投', 19),
+            balks: getCellValue('ボーク', 20),
+            runsAllowed: getCellValue('失点', 21),
+            earnedRuns: getCellValue('自責点', 22),
+            era: parseNumber($(cells[columnMap['防御率'] ?? cells.length - 1]).text()),
           };
+
+          // 詳細統計情報を計算
+          if (stat.innings > 0) {
+            stat.whip = (stat.walks + stat.hits) / stat.innings;
+            stat.homeRunsPer9 = (stat.homeRuns * 9) / stat.innings;
+            stat.walksPer9 = (stat.walks * 9) / stat.innings;
+            if (stat.walks > 0) {
+              stat.strikeoutWalkRatio = stat.strikeouts / stat.walks;
+            }
+          }
+          if (stat.batters > 0) {
+            // 被打率 = 被安打 / (打者数 - 与四球 - 与死球)
+            const atBatsAgainst = stat.batters - stat.walks - stat.hitByPitch;
+            if (atBatsAgainst > 0) {
+              stat.battingAverageAgainst = stat.hits / atBatsAgainst;
+            }
+          }
+
           stats.push(stat);
         }
       });
@@ -276,6 +356,24 @@ function scrapeBattingStats($: cheerio.CheerioAPI): {
             sluggingPercentage: parseNumber($(cells[23]).text()),
             ops: parseNumber($(cells[24]).text()),
           };
+
+          // 詳細統計情報を計算
+          stat.iso = stat.sluggingPercentage - stat.average;
+          if (stat.atBats > 0) {
+            const ballsInPlay = stat.atBats - stat.strikeouts - stat.homeRuns;
+            if (ballsInPlay > 0) {
+              stat.babip = (stat.hits - stat.homeRuns) / ballsInPlay;
+            }
+          }
+          if (stat.plateAppearances > 0) {
+            stat.strikeoutRate = stat.strikeouts / stat.plateAppearances;
+            stat.walkRate = stat.walks / stat.plateAppearances;
+            stat.homeRunRate = stat.homeRuns / stat.plateAppearances;
+          }
+          if (stat.stolenBases + stat.caughtStealing > 0) {
+            stat.stolenBasePercentage = stat.stolenBases / (stat.stolenBases + stat.caughtStealing);
+          }
+
           stats.push(stat);
         }
       });
@@ -288,6 +386,105 @@ function scrapeBattingStats($: cheerio.CheerioAPI): {
 /**
  * HTMLから選手詳細情報をスクレイピング
  */
+/**
+ * 成績テーブルから移籍履歴を抽出
+ * メジャーリーグ期間（データが存在しない年度）も検出
+ */
+function scrapeTransfers(
+  $: cheerio.CheerioAPI,
+  pitchingStats?: PitchingStats[],
+  battingStats?: BattingStats[]
+): Transfer[] {
+  const transfers: Transfer[] = [];
+  const teamHistory = new Map<string, string>(); // 年度 -> 球団名
+  const allYears = new Set<string>(); // 成績テーブルに存在する全年度
+
+  // 投手成績から球団履歴を取得
+  if (pitchingStats) {
+    pitchingStats.forEach((stat) => {
+      if (stat.team && stat.year) {
+        teamHistory.set(stat.year, stat.team);
+        allYears.add(stat.year);
+      }
+    });
+  }
+
+  // 打撃成績から球団履歴を取得（投手成績と統合）
+  if (battingStats) {
+    battingStats.forEach((stat) => {
+      if (stat.team && stat.year) {
+        teamHistory.set(stat.year, stat.team);
+        allYears.add(stat.year);
+      }
+    });
+  }
+
+  // 年度順にソート
+  const sortedYears = Array.from(teamHistory.keys())
+    .map((y) => parseInt(y, 10))
+    .filter((y) => !isNaN(y))
+    .sort((a, b) => a - b)
+    .map((y) => y.toString());
+
+  // 球団の変遷を検出
+  let previousTeam: string | undefined;
+  let previousYear: number | undefined;
+
+  sortedYears.forEach((year) => {
+    const currentTeam = teamHistory.get(year);
+    const currentYear = parseInt(year, 10);
+
+    // 前回の年度との間にギャップがある場合、NPB1軍稼働無し期間として記録
+    if (previousYear !== undefined && currentYear - previousYear > 1) {
+      // ギャップ期間をNPB1軍稼働無し期間として記録
+      for (let gapYear = previousYear + 1; gapYear < currentYear; gapYear++) {
+        transfers.push({
+          year: gapYear.toString(),
+          fromTeam: previousTeam,
+          toTeam: 'NPB1軍稼働無し', // 成績データが存在しない年度（怪我・メジャーリーグ移籍・その他の可能性）
+          type: 'npb_inactive',
+        });
+      }
+      // NPB1軍に戻ってきた移籍も記録
+      if (currentTeam) {
+        transfers.push({
+          year: currentYear.toString(),
+          fromTeam: 'NPB1軍稼働無し',
+          toTeam: currentTeam,
+          type: 'other',
+        });
+      }
+    } else if (currentTeam && currentTeam !== previousTeam && previousTeam) {
+      // 球団が変わった場合、移籍として記録
+      transfers.push({
+        year,
+        fromTeam: previousTeam,
+        toTeam: currentTeam,
+        type: 'other', // 詳細な移籍種別は成績テーブルからは判断できない
+      });
+    }
+
+    previousTeam = currentTeam;
+    previousYear = currentYear;
+  });
+
+  return transfers;
+}
+
+// 注意: ファーム成績の抽出機能は削除されました。
+// NPB公式サイトの選手詳細ページにはファーム成績のセクションが存在しないため、
+// 現時点では取得できません。将来的に別のデータソースから取得する可能性があります。
+//
+// /**
+//  * HTMLからファーム投手成績を抽出
+//  */
+// function scrapeFarmPitchingStats($: cheerio.CheerioAPI): FarmPitchingStats[] { ... }
+//
+// /**
+//  * HTMLからファーム打撃成績を抽出
+//  */
+// function scrapeFarmBattingStats($: cheerio.CheerioAPI): FarmBattingStats[] { ... }
+
 export function scrapePlayerDetailsFromHTML(html: string, playerId: string): PlayerDetails {
   const $ = cheerio.load(html);
 
@@ -300,12 +497,21 @@ export function scrapePlayerDetailsFromHTML(html: string, playerId: string): Pla
   // 打撃成績を抽出
   const { stats: battingStats, career: careerBatting } = scrapeBattingStats($);
 
+  // 注意: 表彰歴はNPB公式サイトの選手詳細ページに存在しないため取得できません
+
+  // 移籍履歴を抽出
+  const transfers = scrapeTransfers($, pitchingStats, battingStats);
+
+  // 注意: ファーム成績はNPB公式サイトの選手詳細ページに掲載されていないため、
+  // 現時点では取得できません。
+
   return {
     profile,
     pitchingStats: pitchingStats.length > 0 ? pitchingStats : undefined,
     battingStats: battingStats.length > 0 ? battingStats : undefined,
     careerPitching,
     careerBatting,
+    transfers: transfers.length > 0 ? transfers : undefined,
   };
 }
 
