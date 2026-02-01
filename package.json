@@ -1,6 +1,6 @@
 {
   "name": "npb-mcp-server",
-  "version": "0.1.1",
+  "version": "0.2.0",
   "description": "MCP Server for NPB (Nippon Professional Baseball) player and team information",
   "type": "module",
   "main": "dist/index.js",
